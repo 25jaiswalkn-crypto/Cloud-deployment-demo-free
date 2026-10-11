@@ -30,3 +30,16 @@ AWS resources were not created because they may generate charges.
 ## LLM usage
 
 An AI coding assistant was used for guidance. The code was reviewed and tested manually.
+
+## Local load-balancing demonstration
+
+Two application containers run from the same Docker image:
+
+- `cloud-demo-1` — port `3001`
+- `cloud-demo-2` — port `3002`
+- Nginx load balancer — port `8080`
+
+ Test the load balancer: 
+```powershell
+curl.exe http://localhost:8080/
+curl.exe http://localhost:8080/health
