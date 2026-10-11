@@ -1,333 +1,191 @@
-﻿
-# Cloud Deployment Demo
 
-## 1. Project Overview
+# Cloud Deployment Demo — Walkthrough
 
-Cloud Deployment Demo is a containerized Node.js web application that demonstrates important cloud computing and DevOps concepts.
+## 1. Introduction
 
-The project covers:
+This project demonstrates a containerized Node.js application using Docker, two independent application containers, and an Nginx load balancer.
 
-- Building a web service using Node.js and Express
-- Containerizing the application using Docker
-- Running multiple independent application instances
-- Performing health checks
-- Distributing traffic using an Nginx load balancer
-- Demonstrating failover when one application instance stops
-- Automatically building the Docker image using GitHub Actions
+The application provides two endpoints:
 
-### Application Endpoints
+- `/` — Displays application and instance information.
+- `/health` — Returns a health-check response.
 
-| Endpoint | Description |
-|---|---|
-| `GET /` | Returns application information, hostname, instance ID, version, and timestamp. |
-| `GET /health` | Returns the health status of the application. |
+The project uses a local setup to avoid unexpected cloud charges.
 
-## 2. Why I Chose This Project
+## 2. Repository Files
 
-I chose this project because cloud deployment is an important part of modern software development. Writing an application is only one part of the development process; the application must also be packaged, deployed, monitored, updated, and kept available for users.
+- `src/server.js` — Contains the Express application, root endpoint, and health endpoint.
+- `Dockerfile` — Uses a Node Alpine base image, installs production dependencies, copies the source code, exposes port 3000, and runs the application as the non-root `node` user.
+- `nginx-default.conf` — Configures Nginx to forward requests to two application instances.
+- `.github/workflows/docker-build.yml` — Builds the Docker image through GitHub Actions when code is pushed to the `main` branch.
+- `README.md` — Contains project documentation and setup instructions.
 
-This project helped me understand how Docker containers, multiple application instances, load balancing, health checks, GitHub, and CI/CD work together. These are foundational concepts used in cloud engineering, DevOps, backend development, and site reliability engineering.
-
-## 3. Where This Type of System Is Used
-
-This architecture can be used for:
-
-- Web applications and REST APIs
-- E-commerce websites
-- Banking and payment services
-- Social media platforms
-- Educational platforms
-- Business dashboards
-- Mobile application backends
-- Services that require reliability, scalability, and automated deployments
-
-In a production environment, the local Nginx load balancer could be replaced by a managed cloud load balancer, and the local Docker containers could run on AWS ECS, Google Cloud Run, Azure Container Apps, or Kubernetes.
-
-## 4. Architecture
+## 3. Architecture
 
 ```mermaid
 flowchart TD
-    A[Client / Browser] --> B[Nginx Load Balancer]
-    B --> C[Node.js App Instance 1]
-    B --> D[Node.js App Instance 2]
-    C --> E[Health Check Endpoint]
-    D --> F[Health Check Endpoint]
-    G[GitHub Repository] --> H[GitHub Actions CI]
-    H --> I[Docker Image Build]
+    A["Client / Browser"] --> B["Nginx Load Balancer<br/>Port 8080"]
+    B --> C["Node.js App Instance 1<br/>cloud-demo-1<br/>Port 3001"]
+    B --> D["Node.js App Instance 2<br/>cloud-demo-2<br/>Port 3002"]
+    E["GitHub Repository"] --> F["GitHub Actions"]
+    F --> G["Build Docker Image"]
 ```
 
-### Components
+Both application containers use the same Docker image. Nginx receives requests on port 8080 and forwards them to either application container.
 
-| Component | Purpose |
-|---|---|
-| Node.js and Express | Runs the web application and API endpoints. |
-| Docker | Packages the application and its dependencies. |
-| Docker containers | Run two independent application instances. |
-| Nginx | Receives requests and forwards them to the application instances. |
-| GitHub | Stores the source code and commit history. |
-| GitHub Actions | Automatically builds the Docker image after a push to `main`. |
+## 4. Show the Docker Containers
 
-## 5. Project Structure
-
-```text
-cloud-deployment-demo-new/
-├── .github/
-│   └── workflows/
-│       └── docker-build.yml
-├── src/
-│   └── server.js
-├── .dockerignore
-├── .gitignore
-├── Dockerfile
-├── nginx-default.conf
-├── nginx.conf
-├── package.json
-├── package-lock.json
-└── README.md
-```
-
-## 6. Application Endpoints
-
-### Root Endpoint
-
-**Request:**
-
-```http
-GET /
-```
-
-**Example Response:**
-
-```json
-{
-  "message": "Cloud deployment demo is running",
-  "version": "1.0.0",
-  "hostname": "container-hostname",
-  "instanceId": "instance-1",
-  "timestamp": "2026-10-11T12:00:00.000Z"
-}
-```
-
-The response provides information about the running application instance.
-
-### Health Endpoint
-
-**Request:**
-
-```http
-GET /health
-```
-
-**Example Response:**
-
-```json
-{
-  "status": "healthy",
-  "hostname": "container-hostname",
-  "timestamp": "2026-10-11T12:00:00.000Z"
-}
-```
-
-The `/health` endpoint returns HTTP status `200` when the application is healthy.
-
-## 7. Requirements
-
-Install the following software:
-
-- Node.js
-- npm
-- Git
-- Docker Desktop
-- VS Code or another code editor
-
-## 8. Run the Application Directly with Node.js
-
-Open a terminal in the project directory and execute:
-
-```bash
-npm install
-npm start
-```
-
-Test the endpoints from another terminal:
+Run in PowerShell:
 
 ```powershell
-curl.exe http://localhost:3000/
-curl.exe http://localhost:3000/health
+docker ps
 ```
 
-## 9. Build and Run with Docker
+The following containers should be running:
 
-### Build the Docker Image
+- `cloud-demo-1` — Application on port 3001.
+- `cloud-demo-2` — Application on port 3002.
+- `cloud-demo-lb` — Nginx load balancer on port 8080.
 
-```bash
-docker build -t cloud-deployment-demo:local .
+If they are not running, start them:
+
+```powershell
+docker start cloud-demo-1 cloud-demo-2 cloud-demo-lb
 ```
 
-### Run One Container
+## 5. Test the Application Instances
 
-```bash
-docker run --rm -p 3000:3000 cloud-deployment-demo:local
-```
-
-The application will be available at:
-
-http://localhost:3000/
-
-## 10. Run Two Application Instances
-
-### Start the First Instance
-
-```bash
-docker run -d --name cloud-demo-1 -p 3001:3000 -e INSTANCE_ID=instance-1 cloud-deployment-demo:local
-```
-
-### Start the Second Instance
-
-```bash
-docker run -d --name cloud-demo-2 -p 3002:3000 -e INSTANCE_ID=instance-2 cloud-deployment-demo:local
-```
-
-### Test Both Instances
+Run:
 
 ```powershell
 curl.exe http://localhost:3001/
 curl.exe http://localhost:3002/
+```
+
+The first response should identify `instance-1`, and the second should identify `instance-2`.
+
+This confirms that two separate application instances are running.
+
+## 6. Test Health Checks
+
+Run:
+
+```powershell
 curl.exe http://localhost:3001/health
 curl.exe http://localhost:3002/health
 ```
 
-### Check Running Containers
+Both instances should return a healthy status.
 
-```bash
-docker ps
-```
+In a cloud deployment, a managed load balancer could use this endpoint to determine whether a container is ready to receive traffic.
 
-Each container runs an independent application instance with its own instance ID.
+## 7. Demonstrate the Nginx Load Balancer
 
-## 11. Run the Local Nginx Load Balancer
-
-Start the load balancer from the project directory using PowerShell:
+Run:
 
 ```powershell
-docker run -d --name cloud-demo-lb -p 8080:80 --add-host=host.docker.internal:host-gateway -v "${PWD}\nginx-default.conf:/etc/nginx/conf.d/default.conf:ro" nginx:alpine
-```
-
-### Send Requests Through Nginx
-
-```powershell
+curl.exe http://localhost:8080/
 curl.exe http://localhost:8080/
 curl.exe http://localhost:8080/health
 ```
 
-The load balancer entry point is:
+Port 8080 is the load-balancer entry point. Nginx receives the request and forwards it to one of the two application containers. The response includes the instance ID, showing which backend handled the request.
 
-http://localhost:8080/
+If both requests show the same instance, the load balancer can still be working: these particular requests may be assigned to the same backend.
 
-Nginx forwards traffic to the two application instances on ports `3001` and `3002`.
+## 8. Demonstrate Failover
 
-## 12. Failover Demonstration
+Stop the first application container:
 
-Failover demonstrates how the application can continue serving requests when one instance stops.
-
-### Stop One Application Instance
-
-```bash
+```powershell
 docker stop cloud-demo-1
 ```
 
-### Test the Load Balancer
+Send a request through the load balancer:
 
 ```powershell
 curl.exe http://localhost:8080/
 ```
 
-If the Nginx upstream configuration supports handling the unavailable instance, the remaining healthy instance should continue serving requests.
+The response should show:
 
-### Restart the Stopped Instance
+```text
+instance-2
+```
 
-```bash
+The request should succeed because the second container remains available, provided the Nginx configuration handles the failed upstream appropriately.
+
+Restart the first container:
+
+```powershell
 docker start cloud-demo-1
 ```
 
-This demonstrates the importance of multiple application instances and load balancing for service availability.
+Check its health:
 
-## 13. GitHub Actions CI
-
-The GitHub Actions workflow is located at:
-
-```text
-.github/workflows/docker-build.yml
+```powershell
+curl.exe http://localhost:3001/health
 ```
 
-It runs when code is pushed to the `main` branch or when a pull request targets `main`.
+The first container should be running again, and its health endpoint should respond.
 
-### Workflow Steps
+## 9. GitHub Actions
 
-1. Checks out the repository.
-2. Builds the Docker image.
-3. Checks whether the Dockerfile and application can be packaged successfully.
+Open the GitHub repository:
 
-### View the Workflow
+https://github.com/25jaiswalkn-crypto/Cloud-deployment-demo-free
 
-1. Open the GitHub repository.
-2. Click the **Actions** tab.
-3. Select **Docker Build Check**.
-4. Open the latest workflow run to inspect its status and logs.
+Then:
 
-This workflow demonstrates Continuous Integration (CI) by automatically validating the Docker build.
+1. Click the **Actions** tab.
+2. Click **Docker Build Check**.
+3. Open the latest successful workflow run.
+4. Open the job and show the **Build Docker image** step.
 
-## 14. Testing Results
+The workflow runs on pushes to the `main` branch. It checks out the code and builds the Docker image on GitHub's runner.
 
-The following tests were completed successfully:
+This provides continuous integration and confirms that the Dockerfile remains buildable.
 
-- Node.js application started locally.
-- Docker image built successfully.
-- First Docker instance responded on port `3001`.
-- Second Docker instance responded on port `3002`.
-- Both `/health` endpoints returned a healthy status.
-- Nginx load balancer responded on port `8080`.
-- One instance was stopped, and the remaining instance continued serving requests.
-- GitHub Actions Docker build workflow was added and pushed to the repository.
+**Limitation:** The workflow only builds the image. It does not push the image to a registry or deploy the application to AWS.
 
-## 15. Cloud Deployment Status and Cost Decision
+## 10. Architecture and Limitation
 
-The original task describes deploying two application instances behind a public managed cloud load balancer. I did not create AWS ECS, AWS Fargate, or an AWS Application Load Balancer because these resources may generate charges, and I wanted to avoid unexpected costs.
+The architecture is:
 
-Instead, this project demonstrates the core architecture locally using Docker and Nginx. The local setup allows me to explore the application, containers, health checks, load balancing, failover, GitHub, and CI/CD without creating paid cloud resources.
+1. The client sends a request to Nginx on port 8080.
+2. Nginx forwards the request to either application container on port 3001 or port 3002.
+3. Both containers run the same Node.js Docker image.
 
-A production cloud deployment could replace the local components with the following:
+The original task asks for a public cloud load balancer and at least two cloud instances. These billable AWS resources were not created because AWS ECS, Fargate, and an Application Load Balancer can generate charges.
 
-| Local Component | Production Equivalent |
-|---|---|
-| Docker containers | Managed container tasks or services |
-| Local Nginx | Managed application load balancer |
-| Local port mapping | Public cloud networking and routing |
-| GitHub Actions build | Build, container registry push, and deployment pipeline |
+Instead, the equivalent architecture was implemented and tested locally using Docker and Nginx.
 
-## 16. Approximate Cost
+In a production cloud deployment, the local Nginx container would be replaced with a managed application load balancer, and the two local containers would run as managed cloud tasks.
 
-| Resource | Cost in This Implementation |
-|---|---|
-| Node.js and Express | Free and open source |
-| Docker Desktop | No separate project-specific charge assumed; licensing terms may apply |
-| Nginx Docker image | Free and open source |
-| GitHub repository | Free for a public repository |
-| GitHub Actions | Uses the applicable usage allowance; monitor usage |
-| AWS ECS, Fargate, and ALB | Not created, to avoid cloud charges |
+## 11. Final Checks Before Submission
 
-Actual costs depend on usage, account plans, and applicable licensing terms.
+Run these commands in PowerShell:
 
-## 17. AI/LLM Usage Declaration
-
-An AI coding assistant was used for explanations, project guidance, command suggestions, and code drafting. I reviewed the generated code, ran the commands, tested the endpoints, inspected Docker containers, corrected the Nginx configuration, and documented the implementation.
-
-## 18. Cleanup Commands
-
-After the demonstration, stop and remove the local demonstration containers:
-
-```bash
-docker rm -f cloud-demo-lb cloud-demo-1 cloud-demo-2
+```powershell
+git status
+docker ps
+curl.exe http://localhost:8080/health
 ```
 
-This removes only the specified local containers. It does not delete the Docker image or GitHub repository.
+Expected results:
+
+- Git reports a clean working tree.
+- Docker shows `cloud-demo-1`, `cloud-demo-2`, and `cloud-demo-lb`.
+- The health response contains:
+
+```json
+{
+  "status": "healthy"
+}
+```
+
+## 12. Submission Links
+
+- **GitHub Repository:** https://github.com/25jaiswalkn-crypto/Cloud-deployment-demo-free
+
+**Important:** This project is a free local implementation of the required architecture. The application has not been publicly deployed on AWS.
