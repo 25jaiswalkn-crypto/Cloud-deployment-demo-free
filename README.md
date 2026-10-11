@@ -1,5 +1,5 @@
 
-# Cloud Deployment Demo — Walkthrough
+# Cloud Deployment Demo 
 
 ## 1. Introduction
 
