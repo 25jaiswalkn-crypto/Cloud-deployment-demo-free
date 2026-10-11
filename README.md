@@ -162,27 +162,19 @@ Instead, the equivalent architecture was implemented and tested locally using Do
 
 In a production cloud deployment, the local Nginx container would be replaced with a managed application load balancer, and the two local containers would run as managed cloud tasks.
 
-## 11. Final Checks Before Submission
+## 11. Limitations
 
-Run these commands in PowerShell:
+This is a free local implementation of the cloud deployment architecture.
 
-```powershell
-git status
-docker ps
-curl.exe http://localhost:8080/health
-```
-
-Expected results:
-
-- Git reports a clean working tree.
-- Docker shows `cloud-demo-1`, `cloud-demo-2`, and `cloud-demo-lb`.
-- The health response contains:
-
-```json
-{
-  "status": "healthy"
-}
-```
+- The application does not have a public cloud URL.
+- AWS ECS, Fargate, and a managed Application Load Balancer were not created because they may generate charges.
+- Nginx is used locally instead of a managed cloud load balancer.
+- The two Docker containers are started and managed manually.
+- The project does not provide cloud autoscaling, cloud monitoring, HTTPS, a custom domain, or a container registry deployment.
+- GitHub Actions currently builds the Docker image but does not deploy it to a cloud platform.
+- The application depends on the local computer and Docker Desktop remaining active.
+- `host.docker.internal` is used to connect the local Nginx container to the two application containers; this configuration is intended for local Windows development, not production.
+- A production version would use a managed container service, a container registry, a public load balancer, HTTPS, secrets management, monitoring, and automatic redeployment.
 
 ## 12. Submission Links
 
